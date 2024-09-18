@@ -1,26 +1,56 @@
-use inquire::{CustomType, Select};
+use inquire::{CustomType, InquireError, Select};
 use std::process;
+
+enum MathOperation {
+    Addition,
+    Subtraction,
+    Multiplication,
+    Division,
+}
 
 fn main() {
     println!("Welcome to Rust Calculator!");
+    let selected_operation = prompt_operation();
+    let first_number = prompt_number("Enter the first number:");
+    let second_number = prompt_number("Enter the second number:");
+    let result = calculate(first_number, second_number, selected_operation);
+    println!("Result: {result}");
+}
 
-    // show the user operation options
-    let operation_prompt_result = Select::new(
-        "Select operation:",
-        vec![
-            "addition ➕",
-            "subtraction ➖",
-            "multiplication ✖",
-            "division ➗",
-        ],
-    )
-    .prompt();
+fn prompt_operation() -> MathOperation {
+    let prompt_option_labels = vec![
+        "addition ➕",
+        "subtraction ➖",
+        "multiplication ✖",
+        "division ➗",
+    ];
+    let prompt_result = Select::new("Select operation:", prompt_option_labels).prompt();
 
-    let selected_option_label = match operation_prompt_result {
+    let selected_option_label = unwrap_prompt_result_ok(prompt_result);
+    let selected_operation: MathOperation = match selected_option_label {
+        "addition ➕" => MathOperation::Addition,
+        "subtraction ➖" => MathOperation::Subtraction,
+        "multiplication ✖" => MathOperation::Multiplication,
+        "division ➗" => MathOperation::Division,
+        err => {
+            eprintln!("Invalid option: {err}\nExiting calculator...");
+            process::exit(1)
+        }
+    };
+
+    return selected_operation;
+}
+
+fn prompt_number(prompt_label: &str) -> i128 {
+    let prompt_result = CustomType::<i128>::new(prompt_label).prompt();
+    unwrap_prompt_result_ok(prompt_result)
+}
+
+fn unwrap_prompt_result_ok<T>(prompt_result: Result<T, InquireError>) -> T {
+    match prompt_result {
         Err(err) => {
             match err {
-                inquire::InquireError::OperationCanceled
-                | inquire::InquireError::OperationInterrupted => {
+                InquireError::OperationCanceled | InquireError::OperationInterrupted => {
                     println!("\nExiting calculator...");
                 }
                 err => eprintln!("Error: {err}\nExiting calculator..."),
@@ -28,6 +58,18 @@ fn main() {
             process::exit(1)
         }
         Ok(option) => option,
+    }
+}
+
+fn calculate(num1: i128, num2: i128, operation: MathOperation) -> i128 {
+    match operation {
+        MathOperation::Addition => num1 + num2,
+        MathOperation::Subtraction => num1 - num2,
+        MathOperation::Multiplication => num1 * num2,
+        MathOperation::Division => num1 / num2,
+    }
+}
+
     };
     enum MathOperation {
         Addition,
