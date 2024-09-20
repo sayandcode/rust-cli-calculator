@@ -59,9 +59,10 @@ fn prompt_option<T: PromptOption + Clone>() -> T {
         .iter()
         .map(|option| option.get_label())
         .collect();
-    let prompt_result = Select::new("Select operation:", prompt_option_labels).prompt();
+    let selected_option_label = Select::new("Select operation:", prompt_option_labels)
+        .prompt()
+        .unwrap_or_else(handle_prompt_err);
 
-    let selected_option_label = unwrap_prompt_result_ok(prompt_result);
     let selected_option = option_variants
         .iter()
         .find(|option| option.get_label() == selected_option_label)
@@ -73,23 +74,19 @@ fn prompt_option<T: PromptOption + Clone>() -> T {
 }
 
 fn prompt_number(prompt_label: &str) -> i128 {
-    let prompt_result = CustomType::<i128>::new(prompt_label).prompt();
-    unwrap_prompt_result_ok(prompt_result)
+    CustomType::<i128>::new(prompt_label)
+        .prompt()
+        .unwrap_or_else(handle_prompt_err)
 }
 
-fn unwrap_prompt_result_ok<T>(prompt_result: Result<T, InquireError>) -> T {
-    match prompt_result {
-        Err(err) => {
-            match err {
-                InquireError::OperationCanceled | InquireError::OperationInterrupted => {
-                    println!("\nExiting calculator...");
-                }
-                err => eprintln!("Error: {err}\nExiting calculator..."),
-            }
-            process::exit(1)
+fn handle_prompt_err<T>(err: InquireError) -> T {
+    match err {
+        InquireError::OperationCanceled | InquireError::OperationInterrupted => {
+            println!("\nExiting calculator...");
         }
-        Ok(option) => option,
+        err => eprintln!("Error: {err}\nExiting calculator..."),
     }
+    process::exit(1)
 }
 
 fn calculate(num1: i128, num2: i128, operation: MathOperation) -> i128 {
