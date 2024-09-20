@@ -8,37 +8,68 @@ enum MathOperation {
     Division,
 }
 
+trait PromptOption: Sized {
+    fn list_variants() -> Vec<Self>;
+    fn get_label(&self) -> &str;
+}
+
+impl PromptOption for MathOperation {
+    fn list_variants() -> Vec<Self> {
+        vec![
+            Self::Addition,
+            Self::Subtraction,
+            Self::Multiplication,
+            Self::Division,
+        ]
+    }
+
+    fn get_label(&self) -> &str {
+        match self {
+            Self::Addition => "addition ➕",
+            Self::Subtraction => "subtraction ➖",
+            Self::Multiplication => "multiplication ✖",
+            Self::Division => "division ➗",
+        }
+    }
+}
+
+impl Clone for MathOperation {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Addition => Self::Addition,
+            Self::Subtraction => Self::Subtraction,
+            Self::Multiplication => Self::Multiplication,
+            Self::Division => Self::Division,
+        }
+    }
+}
+
 fn main() {
     println!("Welcome to Rust Calculator!");
-    let selected_operation = prompt_operation();
+    let selected_operation = prompt_option::<MathOperation>();
     let first_number = prompt_number("Enter the first number:");
     let second_number = prompt_number("Enter the second number:");
     let result = calculate(first_number, second_number, selected_operation);
     println!("Result: {result}");
 }
 
-fn prompt_operation() -> MathOperation {
-    let prompt_option_labels = vec![
-        "addition ➕",
-        "subtraction ➖",
-        "multiplication ✖",
-        "division ➗",
-    ];
+fn prompt_option<T: PromptOption + Clone>() -> T {
+    let option_variants = T::list_variants();
+    let prompt_option_labels = option_variants
+        .iter()
+        .map(|option| option.get_label())
+        .collect();
     let prompt_result = Select::new("Select operation:", prompt_option_labels).prompt();
 
     let selected_option_label = unwrap_prompt_result_ok(prompt_result);
-    let selected_operation: MathOperation = match selected_option_label {
-        "addition ➕" => MathOperation::Addition,
-        "subtraction ➖" => MathOperation::Subtraction,
-        "multiplication ✖" => MathOperation::Multiplication,
-        "division ➗" => MathOperation::Division,
-        err => {
-            eprintln!("Invalid option: {err}\nExiting calculator...");
-            process::exit(1)
-        }
-    };
-
-    return selected_operation;
+    let selected_option = option_variants
+        .iter()
+        .find(|option| option.get_label() == selected_option_label)
+        .unwrap_or_else(|| {
+            eprintln!("Invalid option: {selected_option_label}");
+            process::exit(1);
+        });
+    return selected_option.clone();
 }
 
 fn prompt_number(prompt_label: &str) -> i128 {
@@ -70,60 +101,4 @@ fn calculate(num1: i128, num2: i128, operation: MathOperation) -> i128 {
     }
 }
 
-    };
-    enum MathOperation {
-        Addition,
-        Subtraction,
-        Multiplication,
-        Division,
-    }
-    let selected_operation: MathOperation = match selected_option_label {
-        "addition ➕" => {
-            println!("So you want to add");
-            MathOperation::Addition
-        }
-        "subtraction ➖" => {
-            println!("So you want to subtract");
-            MathOperation::Subtraction
-        }
-        "multiplication ✖" => {
-            println!("So you want to multiply");
-            MathOperation::Multiplication
-        }
-        "division ➗" => {
-            println!("So you want to divide");
-            MathOperation::Division
-        }
-        err => {
-            eprintln!("Invalid option: {err}\nExiting calculator...");
-            process::exit(1)
-        }
-    };
-
-    // Get number inputs
-    let first_number = match CustomType::<i128>::new("Enter the first number:").prompt() {
-        Err(err) => {
-            eprintln!("Error: {err}");
-            process::exit(1);
-        }
-        Ok(num) => num,
-    };
-    let second_number = match CustomType::<i128>::new("Enter the second number:").prompt() {
-        Err(err) => {
-            eprintln!("Error: {err}");
-            process::exit(1);
-        }
-        Ok(num) => num,
-    };
-
-    // Calculate
-    let result = match selected_operation {
-        MathOperation::Addition => first_number + second_number,
-        MathOperation::Subtraction => first_number - second_number,
-        MathOperation::Multiplication => first_number * second_number,
-        MathOperation::Division => first_number / second_number,
-    };
-
-    // Show output
-    println!("Result: {result}");
-}
+// What if you passed in one full enum to the function, and the enum had the label?
