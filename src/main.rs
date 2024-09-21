@@ -88,8 +88,8 @@ fn prompt_option<T: PromptOption + Clone>() -> T {
     return selected_option.clone();
 }
 
-fn prompt_number(prompt_label: &str) -> i128 {
-    CustomType::<i128>::new(prompt_label)
+fn prompt_number(prompt_label: &str) -> f64 {
+    CustomType::<f64>::new(prompt_label)
         .prompt()
         .unwrap_or_else(handle_prompt_err)
 }
