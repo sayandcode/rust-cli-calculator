@@ -1,10 +1,54 @@
 use inquire::{CustomType, InquireError, Select};
 use std::ops::{Add, Div, Mul, Sub};
 use std::process;
+use std::str::FromStr;
 
-trait PromptOption: Sized {
+// TODO: Make internals private
+
+trait ErrorHandler<T> {
+    fn unwrap_or_handle_err(self) -> T;
+}
+
+impl<T> ErrorHandler<T> for Result<T, InquireError> {
+    fn unwrap_or_handle_err(self) -> T {
+        match self {
+            Err(err) => {
+                match err {
+                    InquireError::OperationCanceled | InquireError::OperationInterrupted => {
+                        println!("\nExiting calculator...")
+                    }
+                    err => eprintln!("\nError:{err}/nExiting calculator..."),
+                }
+                process::exit(1)
+            }
+            Ok(val) => val,
+        }
+    }
+}
+trait PromptOption: Sized + Clone {
     fn list_variants() -> Vec<Self>;
+
     fn get_label(&self) -> &str;
+
+    fn prompt() -> Self {
+        let option_variants = Self::list_variants();
+        let prompt_option_labels = option_variants
+            .iter()
+            .map(|option| option.get_label())
+            .collect();
+        let selected_option_label = Select::new("Select operation:", prompt_option_labels)
+            .prompt()
+            .unwrap_or_handle_err();
+
+        let selected_option = option_variants
+            .iter()
+            .find(|option| option.get_label() == selected_option_label)
+            .unwrap_or_else(|| {
+                eprintln!("Invalid option: {selected_option_label}");
+                process::exit(1);
+            });
+        selected_option.clone()
+    }
 }
 
 enum MathOperation {
@@ -24,6 +68,17 @@ impl MathOperation {
             MathOperation::Subtraction => num1 - num2,
             MathOperation::Multiplication => num1 * num2,
             MathOperation::Division => num1 / num2,
+        }
+    }
+}
+
+impl Clone for MathOperation {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Addition => Self::Addition,
+            Self::Subtraction => Self::Subtraction,
+            Self::Multiplication => Self::Multiplication,
+            Self::Division => Self::Division,
         }
     }
 }
@@ -48,58 +103,15 @@ impl PromptOption for MathOperation {
     }
 }
 
-impl Clone for MathOperation {
-    fn clone(&self) -> Self {
-        match self {
-            Self::Addition => Self::Addition,
-            Self::Subtraction => Self::Subtraction,
-            Self::Multiplication => Self::Multiplication,
-            Self::Division => Self::Division,
-        }
-    }
-}
-
 fn main() {
     println!("Welcome to Rust Calculator!");
-    let selected_operation = prompt_option::<MathOperation>();
-    let first_number = prompt_number("Enter the first number:");
-    let second_number = prompt_number("Enter the second number:");
+    let selected_operation = MathOperation::prompt();
+    let first_number = prompt::<f64>("Enter the first number:");
+    let second_number = prompt::<f64>("Enter the second number:");
     let result = selected_operation.calculate(first_number, second_number);
     println!("Result: {result}");
 }
 
-fn prompt_option<T: PromptOption + Clone>() -> T {
-    let option_variants = T::list_variants();
-    let prompt_option_labels = option_variants
-        .iter()
-        .map(|option| option.get_label())
-        .collect();
-    let selected_option_label = Select::new("Select operation:", prompt_option_labels)
-        .prompt()
-        .unwrap_or_else(handle_prompt_err);
-
-    let selected_option = option_variants
-        .iter()
-        .find(|option| option.get_label() == selected_option_label)
-        .unwrap_or_else(|| {
-            eprintln!("Invalid option: {selected_option_label}");
-            process::exit(1);
-        });
-    return selected_option.clone();
-}
-
-fn prompt_number(prompt_label: &str) -> f64 {
-    CustomType::<f64>::new(prompt_label)
-        .prompt()
-        .unwrap_or_else(handle_prompt_err)
-}
-
-fn handle_prompt_err<T>(err: InquireError) -> T {
-    match err {
-        InquireError::OperationCanceled | InquireError::OperationInterrupted => {
-            println!("\nExiting calculator...");
-        }
-        err => eprintln!("Error: {err}\nExiting calculator..."),
-    }
-    process::exit(1)
+fn prompt<T: Clone + FromStr + ToString>(label: &str) -> T {
+    CustomType::<T>::new(label).prompt().unwrap_or_handle_err()
 }
