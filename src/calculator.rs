@@ -1,4 +1,4 @@
-pub use crate::inquire_helpers::PromptOption;
+use crate::inquire_helpers::PromptOption;
 use std::ops::{Add, Div, Mul, Sub};
 
 pub enum MathOperation {

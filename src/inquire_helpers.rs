@@ -1,4 +1,4 @@
-use inquire::{CustomType, InquireError, Select};
+use inquire::{Confirm, CustomType, InquireError, Select};
 use std::process;
 use std::str::FromStr;
 
@@ -49,6 +49,10 @@ pub trait PromptOption: Sized + Clone {
     }
 }
 
-pub fn prompt<T: Clone + FromStr + ToString>(label: &str) -> T {
+pub fn prompt_input<T: Clone + FromStr + ToString>(label: &str) -> T {
     CustomType::<T>::new(label).prompt().unwrap_or_handle_err()
+}
+
+pub fn prompt_confirm(label: &str) -> bool {
+    Confirm::new(label).prompt().unwrap_or_handle_err()
 }
