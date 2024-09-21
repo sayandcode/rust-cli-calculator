@@ -1,5 +1,11 @@
 use inquire::{CustomType, InquireError, Select};
+use std::ops::{Add, Div, Mul, Sub};
 use std::process;
+
+trait PromptOption: Sized {
+    fn list_variants() -> Vec<Self>;
+    fn get_label(&self) -> &str;
+}
 
 enum MathOperation {
     Addition,
@@ -8,9 +14,18 @@ enum MathOperation {
     Division,
 }
 
-trait PromptOption: Sized {
-    fn list_variants() -> Vec<Self>;
-    fn get_label(&self) -> &str;
+impl MathOperation {
+    fn calculate<T>(&self, num1: T, num2: T) -> T
+    where
+        T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T>,
+    {
+        match self {
+            MathOperation::Addition => num1 + num2,
+            MathOperation::Subtraction => num1 - num2,
+            MathOperation::Multiplication => num1 * num2,
+            MathOperation::Division => num1 / num2,
+        }
+    }
 }
 
 impl PromptOption for MathOperation {
@@ -49,7 +64,7 @@ fn main() {
     let selected_operation = prompt_option::<MathOperation>();
     let first_number = prompt_number("Enter the first number:");
     let second_number = prompt_number("Enter the second number:");
-    let result = calculate(first_number, second_number, selected_operation);
+    let result = selected_operation.calculate(first_number, second_number);
     println!("Result: {result}");
 }
 
@@ -88,14 +103,3 @@ fn handle_prompt_err<T>(err: InquireError) -> T {
     }
     process::exit(1)
 }
-
-fn calculate(num1: i128, num2: i128, operation: MathOperation) -> i128 {
-    match operation {
-        MathOperation::Addition => num1 + num2,
-        MathOperation::Subtraction => num1 - num2,
-        MathOperation::Multiplication => num1 * num2,
-        MathOperation::Division => num1 / num2,
-    }
-}
-
-// What if you passed in one full enum to the function, and the enum had the label?
